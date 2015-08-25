@@ -5,6 +5,7 @@ var ghb = require("./index")
 ,   cmd = args[1]
 ,   confPath = args[2]
 ,   conf = ghb.loadConfiguration(confPath)
+,   version = require("./package.json").version
 ;
 
 if (cmd === "help") {
@@ -13,10 +14,15 @@ if (cmd === "help") {
     "",
     "Usage: gh-backup COMMAND /path/to/configuration.json",
     "Commands:",
-    "init   - initialise from a list of repositories",
-    "update - check events from a Pheme instance and update the repositories that need to be",
-    "help   - print this message"
+    "init    - initialise from a list of repositories",
+    "update  - check events from a Pheme instance and update the repositories that need to be",
+    "version - print the version number"
+    "help    - print this message"
   ]);
+  process.exit(0);
+}
+else if (cmd === "version") {
+  console.log(version);
   process.exit(0);
 }
 else if (cmd === "init") {

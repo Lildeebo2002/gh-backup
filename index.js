@@ -15,3 +15,18 @@ var sua = require("superagent")
 // - if there are deleted repos, we don't care
 // - if there are changes to repos, git fetch gets to run inside the appropriate repoDir
 // - all is logged
+
+exports.loadConfiguration = function (path) {
+  var conf;
+  try {
+    conf = require(path);
+  }
+  catch (e) {
+    throw new Error("Configuration file not found or not valid JSON at " + path);
+  }
+  return conf;
+}
+
+exports.init = function (conf) {
+
+}
