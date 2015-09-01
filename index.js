@@ -74,7 +74,7 @@ function storeLastUpdate (conf) {
   conf.log.info("Stored last update: " + key.join(","));
 }
 
-function makeIgnoreErrorCB (cb) {
+function makeIgnoreErrorCB (conf, cb) {
   return function (err) {
     if (err) conf.log.error(err);
     cb();
@@ -117,7 +117,7 @@ exports.init = function (conf) {
     var funcs = [];
     repos
         .map(function (it) { return it.name; })
-        .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
+        .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(conf, cb)); }) });
     if (conf.debug) funcs = funcs.slice(0, 5);
     async.series(
       funcs
@@ -142,10 +142,10 @@ exports.update = function (conf) {
         var temp = {}
         ,   funcs = []
         ;
-        res.body.forEach(function (it) { temp[it.repo] = true; });
+        res.body.forEach(function (it) { temp[it.repo.replace("w3c/", "")] = true; });
         Object.keys(temp)
-              .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
-        if (conf.debug) funcs = func.slice(0, 5);
+              .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(conf, cb)); }) });
+        if (conf.debug) funcs = funcs.slice(0, 5);
         async.series(
           funcs
         , function (err) {
