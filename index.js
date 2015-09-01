@@ -38,10 +38,19 @@ function cloneRepo (conf, repo) {
   });
 }
 
+function storeLastUpdate (conf) {
+  var d = new Date(doc.time)
+  ,   key = [d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(),
+              d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds(),
+              d.getUTCMilliseconds()]
+  fs.writeFileSync(pth.join(conf.dataDir, "last.json"), JSON.stringify(key), "utf8");
+}
+
 // set up all known public repositories
 exports.init = function (conf) {
   if (!conf.dataDir) throw new Error("Missing configuration field: dataDir.");
   ensureDir(conf.dataDir);
+  storeLastUpdate(conf);
   sua.get("https://api.github.com/orgs/w3c/repos?type=public")
       .accept("json")
       .end(function (err, res) {
