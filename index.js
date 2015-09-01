@@ -90,10 +90,12 @@ exports.init = function (conf) {
       .accept("json")
       .end(function (err, res) {
         if (err) return conf.log.error("Error setting up: " + err);
+        if (conf.debug) conf.log.info(res.body.map(function (it) { return it.name; }));
         var funcs = [];
         res.body
             .map(function (it) { return it.name; })
             .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
+        if (conf.debug) funcs = func.slice(0, 5);
         async.series(
           funcs
         , function (err) {
@@ -110,6 +112,7 @@ exports.update = function (conf) {
       .accept("json")
       .end(function (err, res) {
         if (err) return conf.log.error("Error getting updates: " + err);
+        if (conf.debug) conf.log.info(res.body.map(function (it) { return it.repo; }));
         storeLastUpdate(conf);
         var temp = {}
         ,   funcs = []
@@ -117,6 +120,7 @@ exports.update = function (conf) {
         res.body.forEach(function (it) { temp[it.repo] = true; });
         Object.keys(temp)
               .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
+        if (conf.debug) funcs = func.slice(0, 5);
         async.series(
           funcs
         , function (err) {
