@@ -3,6 +3,7 @@ var sua = require("superagent")
 ,   fs = require("fs-extra")
 ,   pth = require("path")
 ,   winston = require("winston")
+,   async = require("async")
 ,   exec = require("child_process").exec
 ;
 
@@ -44,21 +45,23 @@ function ensureDir (dir) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir);
 }
 
-function fetchRepo (conf, repo) {
+function fetchRepo (conf, repo, cb) {
   var repoDir = pth.join(conf.dataDir, repo);
-  if (!fs.existsSync(repoDir)) return cloneRepo(conf, repo);
+  if (!fs.existsSync(repoDir)) return cloneRepo(conf, repo, cb);
   exec("git fetch", { cwd: repoDir }, function (err) {
-    if (err) return conf.log.error("Error fetching " + repo + " inside " + repoDir + ": " + err);
+    if (err) return cb("Error fetching " + repo + " inside " + repoDir + ": " + err);
     conf.log.info("Updated " + repo + " in " + repoDir);
+    cb();
   });
 }
 
-function cloneRepo (conf, repo) {
+function cloneRepo (conf, repo, cb) {
   var repoDir = pth.join(conf.dataDir, repo);
-  if (fs.existsSync(repoDir)) return fetchRepo(conf, repo);
+  if (fs.existsSync(repoDir)) return fetchRepo(conf, repo, cb);
   exec("git clone --mirror https://github.com/w3c/" + repo + ".git " + repoDir, function (err) {
-    if (err) return conf.log.error("Error cloning repository: " + repo + ", " + err);
+    if (err) return cb("Error cloning repository: " + repo + ", " + err);
     conf.log.info("Cloned " + repo + " to " + repoDir);
+    cb();
   });
 }
 
@@ -71,6 +74,13 @@ function storeLastUpdate (conf) {
   conf.log.info("Stored last update: " + key.join(","));
 }
 
+function makeIgnoreErrorCB (cb) {
+  return function (err) {
+    if (err) conf.log.error(err);
+    cb();
+  };
+}
+
 // set up all known public repositories
 exports.init = function (conf) {
   if (!conf.dataDir) return conf.log.error("Missing configuration field: dataDir.");
@@ -80,12 +90,20 @@ exports.init = function (conf) {
       .accept("json")
       .end(function (err, res) {
         if (err) return conf.log.error("Error setting up: " + err);
+        var funcs = [];
         res.body
             .map(function (it) { return it.name; })
-            .forEach(function (it) { cloneRepo(conf, it); })
+            .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
+        async.series(
+          funcs
+        , function (err) {
+            conf.log.info("init: done");
+          }
+        );
       })
 }
 
+// get a list of updated repos and update the backup
 exports.update = function (conf) {
   var lastUpdate = JSON.parse(fs.readFileSync(pth.join(conf.dataDir, "last.json"), "utf8"));
   sua.get(conf.pheme + "api/events-updates/" + lastUpdate.join(","))
@@ -93,9 +111,17 @@ exports.update = function (conf) {
       .end(function (err, res) {
         if (err) return conf.log.error("Error getting updates: " + err);
         storeLastUpdate(conf);
-        var temp = {};
+        var temp = {}
+        ,   funcs = []
+        ;
         res.body.forEach(function (it) { temp[it.repo] = true; });
         Object.keys(temp)
-              .forEach(function (it) { cloneRepo(conf, it); })
+              .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
+        async.series(
+          funcs
+        , function (err) {
+            conf.log.info("update: done");
+          }
+        );
       })
 }
