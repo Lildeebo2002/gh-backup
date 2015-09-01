@@ -66,7 +66,7 @@ function cloneRepo (conf, repo, cb) {
 }
 
 function storeLastUpdate (conf) {
-  var d = new Date(doc.time)
+  var d = new Date()
   ,   key = [d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate(),
               d.getUTCHours(), d.getUTCMinutes(), d.getUTCSeconds(),
               d.getUTCMilliseconds()]
@@ -81,33 +81,58 @@ function makeIgnoreErrorCB (cb) {
   };
 }
 
+// these keep calling the next page until there are no results left
+function getRepoPage (page, cb) {
+  sua.get("https://api.github.com/orgs/w3c/repos?type=public&page=" + page)
+      .accept("json")
+      .end(function (err, res) {
+        if (err) return cb(err);
+        cb(null, res.body);
+      });
+}
+function getFullRepoList (cb) {
+  var page = 1
+  ,   res = []
+  ,   handler = function (err, repos) {
+        if (err) return cb(err);
+        if (repos.length) {
+          res = res.concat(repos);
+          page++;
+          getRepoPage(page, handler);
+        }
+        else cb(null, res);
+      }
+  ;
+  getRepoPage(page, handler);
+}
+
 // set up all known public repositories
 exports.init = function (conf) {
   if (!conf.dataDir) return conf.log.error("Missing configuration field: dataDir.");
   ensureDir(conf.dataDir);
   storeLastUpdate(conf);
-  sua.get("https://api.github.com/orgs/w3c/repos?type=public")
-      .accept("json")
-      .end(function (err, res) {
-        if (err) return conf.log.error("Error setting up: " + err);
-        if (conf.debug) conf.log.info(res.body.map(function (it) { return it.name; }));
-        var funcs = [];
-        res.body
-            .map(function (it) { return it.name; })
-            .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
-        if (conf.debug) funcs = func.slice(0, 5);
-        async.series(
-          funcs
-        , function (err) {
-            conf.log.info("init: done");
-          }
-        );
-      })
+  getFullRepoList(function (err, repos) {
+    if (err) return conf.log.error("Error setting up: " + err);
+    if (conf.debug) conf.log.info(repos.map(function (it) { return it.name; }));
+    var funcs = [];
+    repos
+        .map(function (it) { return it.name; })
+        .forEach(function (it) { funcs.push(function (cb) { cloneRepo(conf, it, makeIgnoreErrorCB(cb)); }) });
+    if (conf.debug) funcs = funcs.slice(0, 5);
+    async.series(
+      funcs
+    , function (err) {
+        conf.log.info("init: done");
+      }
+    );
+  })
 }
 
 // get a list of updated repos and update the backup
 exports.update = function (conf) {
-  var lastUpdate = JSON.parse(fs.readFileSync(pth.join(conf.dataDir, "last.json"), "utf8"));
+  var lastUpdateFile = pth.join(conf.dataDir, "last.json");
+  if (!fs.existsSync(lastUpdateFile)) return conf.log.error("Cannot find last update file: have you forgotten to init?");
+  var lastUpdate = JSON.parse(fs.readFileSync(lastUpdateFile, "utf8"));
   sua.get(conf.pheme + "api/events-updates/" + lastUpdate.join(","))
       .accept("json")
       .end(function (err, res) {

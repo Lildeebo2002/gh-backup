@@ -2,9 +2,8 @@
 
 var ghb = require("./index")
 ,   args = process.argv
-,   cmd = args[1]
-,   confPath = args[2]
-,   conf = ghb.loadConfiguration(confPath)
+,   cmd = args[2]
+,   confPath = args[3]
 ,   version = require("./package.json").version
 ;
 
@@ -16,9 +15,10 @@ if (cmd === "help") {
     "Commands:",
     "init    - initialise from a list of repositories",
     "update  - check events from a Pheme instance and update the repositories that need to be",
-    "version - print the version number"
-    "help    - print this message"
-  ]);
+    "version - print the version number",
+    "help    - print this message",
+    ""
+  ].join("\n"));
   process.exit(0);
 }
 else if (cmd === "version") {
@@ -26,10 +26,10 @@ else if (cmd === "version") {
   process.exit(0);
 }
 else if (cmd === "init") {
-  ghb.init(conf);
+  ghb.init(ghb.loadConfiguration(confPath));
 }
 else if (cmd === "update") {
-  ghb.update(conf);
+  ghb.update(ghb.loadConfiguration(confPath));
 }
 else {
   console.error("Unknown command: " + cmd);
