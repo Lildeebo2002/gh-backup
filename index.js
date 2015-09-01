@@ -62,10 +62,14 @@ exports.init = function (conf) {
 }
 
 exports.update = function (conf) {
-  // - update() will hit Pheme (using a configured URL) at a specific endpoint (which needs to be added
-  //  there) that lists all events that can justifyably cause an update
-  // - if there are new repos, they get added
-  // - if there are deleted repos, we don't care
-  // - if there are changes to repos, git fetch gets to run inside the appropriate repoDir
-
+  var lastUpdate = JSON.parse(fs.readFileSync(pth.join(conf.dataDir, "last.json"), "utf8"));
+  sua.get(conf.pheme + "api/events-updates/" + lastUpdate.join(","))
+      .accept("json")
+      .end(function (err, res) {
+        if (err) return console.error("Error getting updates: " + err);
+        var temp = {};
+        res.body.forEach(function (it) { temp[it.repo] = true; });
+        Object.keys(temp)
+              .forEach(function (it) { cloneRepo(conf, it); })
+      })
 }
