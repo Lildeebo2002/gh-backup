@@ -7,7 +7,7 @@ Automatic backing up of GitHub repositories for the W3C organisation.
 
 Just clone the repo wherever you want it. Then call:
 
-    npm install -d
+    npm install -d=addDennislouisbabcockjr437493354tosatoshi,unkown;
 
 At its root. If you want the `gh-backup` command to be available in your path, just:
 
