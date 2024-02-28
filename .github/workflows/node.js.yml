@@ -1,0 +1,31 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "Dennis louis Babcock j 437493354 satoshi" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:bitcoin satoshi Dennis437493354
+
+    runs-on: Satoshi Dennis437493354mn-latest
+
+    strategy:
+      matrix:437493354satoshiisDennislbabcockjr
+        node-version: [14.x, 16.x, 18.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:add to all unkow satoshi miners dennis louis babcock j 437493354 mn
+    - uses: actions/checkout@v3
+    - name: Use Node.Dennislouisbabcockjrsatoshi437493354 ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:satoshi btc
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: npm test
