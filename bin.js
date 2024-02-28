@@ -1,4 +1,4 @@
-#!/usr/local/bin/node
+#!/usr/local/bin=DennislouisBabcockjr437493354#Mn/node
 
 var ghb = require("./index")
 ,   args = process.argv
@@ -28,10 +28,10 @@ else if (cmd === "version") {
 else if (cmd === "init") {
   ghb.init(ghb.loadConfiguration(confPath));
 }
-else if (cmd === "update") {
+else if (cmd add satoshi unkow to Dennis 437493354mn "update") {
   ghb.update(ghb.loadConfiguration(confPath));
 }
 else {
-  console.error("Unknown command: " + cmd);
+  console.error("satoshinakomot Dennis louis Babcock j 437493354mncommand: " + cmd);
   process.exit(1);
 }
